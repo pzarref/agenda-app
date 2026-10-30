@@ -1,0 +1,138 @@
+<!DOCTYPE html><html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Agenda de Aulas</title>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0b5fff"><link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f4;--cd:#fff;--tx:#14202b;--mu:#64717e;--ln:#d9dfe5;--ac:#0b5fff;--ok:#1a7f4b;--bad:#b42318;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141a;--cd:#18212a;--tx:#e8edf2;--mu:#8b98a5;--ln:#2a3641;--ac:#5b93ff;--ok:#4fbf86;--bad:#f27d72}}
+:root[data-theme="dark"]{--bg:#0e141a;--cd:#18212a;--tx:#e8edf2;--mu:#8b98a5;--ln:#2a3641;--ac:#5b93ff;--ok:#4fbf86;--bad:#f27d72}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 Barlow,system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:12px 12px 96px}
+h1,h2,.num{font-family:"Barlow Condensed",Impact,sans-serif;font-weight:700;margin:0}
+h2{font-size:26px}.mu{color:var(--mu)}.row{display:flex;align-items:center;gap:8px}.sp{justify-content:space-between}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{border:1px solid var(--ln);background:var(--cd);border-radius:10px;padding:9px 14px;cursor:pointer;min-height:44px}
+.pri{background:var(--ac);border-color:var(--ac);color:#fff}.dng{color:var(--bad)}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--cd);border-top:1px solid var(--ln);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav button{flex:1;max-width:140px;border:0;background:none;padding:14px 4px;font-weight:600;color:var(--mu);cursor:pointer;border-top:3px solid transparent}
+.nav button.on{color:var(--ac);border-top-color:var(--ac)}
+.day{margin-top:16px}.dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dh .num{font-size:22px}.tod .num{color:var(--ac)}
+.cls{background:var(--cd);border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:8px solid var(--c);cursor:pointer}
+.cls .num{font-size:22px}.x{opacity:.55}.x .eur{text-decoration:line-through}
+.wk{white-space:pre-wrap;color:var(--mu);font-size:14px;margin-top:4px;max-height:3.2em;overflow:hidden}
+.chip{font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.cell{background:var(--cd);border-radius:8px;min-height:56px;padding:4px;cursor:pointer;font-size:14px}
+.cell.t{outline:2px solid var(--ac)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin:1px}
+.card{background:var(--cd);border-radius:12px;padding:14px;margin-top:10px}
+.big{font-size:56px;line-height:1}
+#sh{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+#sh .in{background:var(--bg);width:100%;max-width:640px;max-height:92%;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+label{display:block;margin-top:10px;font-size:14px;color:var(--mu)}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-radius:8px;background:var(--cd);margin-top:3px}
+input[type=checkbox]{width:auto}textarea{min-height:130px}
+.sw{display:flex;gap:8px;margin-top:6px}.sw span{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:pointer}.sw .on{border-color:var(--tx)}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+</style></head><body><main id="m"></main>
+<div class="nav" id="nv"></div><div id="sh"><div class="in" id="in"></div></div>
+<script>
+const T={pt:{week:'Semana',month:'Mês',earn:'Ganhos',places:'Locais',set:'Definições',today:'Hoje',add:'Adicionar aula',none:'Sem aulas',place:'Local',type:'Tipo de aula',time:'Hora',date:'Data',status:'Estado',given:'Dada',cancelled:'Cancelada',subst:'Substituída',rov:'Valor desta aula (opcional)',wo:'Treino',rep:'Repetir todas as semanas',st:'Guardar só esta',sa:'Guardar toda a série',save:'Guardar',del:'Apagar',dt:'Apagar só esta',da:'Apagar a série',close:'Fechar',name:'Nome',addr:'Morada',contact:'Contacto',notes:'Notas',color:'Cor',rates:'Valor por aula',np:'Novo local',nt:'Novo tipo',total:'Total do mês',bp:'Por local',bt:'Por tipo',cls:'aulas',lang:'Idioma',types:'Tipos de aula',bk:'Cópia de segurança',ex:'Copie este texto e guarde-o (por exemplo, envie-o para si por e-mail ou WhatsApp).',im:'Para restaurar, cole aqui o texto guardado.',rs:'Restaurar',first:'Crie primeiro um local (em Locais) e um tipo de aula (em Definições).',sure:'Tem a certeza?',ok:'Restaurado.',bad:'Texto inválido.',notype:'Crie tipos de aula em Definições para definir valores.',tn:'Nome do tipo',pw:'Treino do dia',cloud:'Cópia automática na conta Claude',c_ok:'Guardado na sua conta. Última cópia às',c_err:'Não foi possível ligar à conta. Os dados estão guardados só neste telemóvel.',c_wait:'A ligar à conta…',file:'Guardar ficheiro no telemóvel',nodl:'Não é possível guardar ficheiros aqui.',warn:'Sem cópia na conta e sem ficheiro há mais de 7 dias. Vá a Definições.'},
+en:{week:'Week',month:'Month',earn:'Earnings',places:'Places',set:'Settings',today:'Today',add:'Add class',none:'No classes',place:'Place',type:'Class type',time:'Time',date:'Date',status:'Status',given:'Given',cancelled:'Cancelled',subst:'Substituted',rov:'Rate for this class (optional)',wo:'Workout',rep:'Repeat every week',st:'Save this one only',sa:'Save whole series',save:'Save',del:'Delete',dt:'Delete this one',da:'Delete series',close:'Close',name:'Name',addr:'Address',contact:'Contact',notes:'Notes',color:'Color',rates:'Rate per class',np:'New place',nt:'New type',total:'Month total',bp:'By place',bt:'By type',cls:'classes',lang:'Language',types:'Class types',bk:'Backup',ex:'Copy this text and keep it safe (e.g. email or WhatsApp it to yourself).',im:'To restore, paste the saved text here.',rs:'Restore',first:'First create a place (in Places) and a class type (in Settings).',sure:'Are you sure?',ok:'Restored.',bad:'Invalid text.',notype:'Create class types in Settings to set rates.',tn:'Type name',cloud:'Automatic backup to your Claude account',c_ok:'Saved to your account. Last backup at',c_err:'Could not connect to your account. Data is stored on this phone only.',c_wait:'Connecting to your account…',file:'Save file to phone',nodl:'Saving files is not possible here.',warn:'No account backup and no file saved in over 7 days. Go to Settings.'}};
+Object.assign(T.pt,{cloud:'Ligação ao GitHub',c_ok:'Guardado no GitHub às',c_err:'Não foi possível guardar no GitHub. Verifique o repositório e o token.',c_wait:'A guardar…',c_off:'Sem ligação ao GitHub (os dados ficam só neste telemóvel).',nopay:'sem pagamento (Open Box)',rg:'Atualizar Regibox'});
+Object.assign(T.en,{cloud:'GitHub connection',c_ok:'Saved to GitHub at',c_err:'Could not save to GitHub. Check repository and token.',c_wait:'Saving…',c_off:'Not connected to GitHub (data stays on this phone).',nopay:'unpaid (Open Box)',rg:'Refresh Regibox'});
+const COL=['#e4572e','#0b9d8a','#7a5af8','#d99a00','#2e90fa','#d444a6'];
+let S;try{S=JSON.parse(localStorage.getItem('cf')||'null')}catch(e){}
+S=S||{lang:'pt',places:[],types:[],rates:{},ev:[],ov:{},lt:'18:30'};
+let cst='',cok=0,pt,RG=null;
+const G=()=>{try{return JSON.parse(localStorage.getItem('gh')||'{}')}catch(e){return{}}};
+const sv=()=>{S.at=Date.now();try{localStorage.setItem('cf',JSON.stringify(S))}catch(e){}push()};
+const gh=(path,opt={})=>{const c=G();return fetch('https://api.github.com/repos/'+c.repo+'/contents/'+path,{...opt,headers:{Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json',...(opt.headers||{})}})};
+function push(){clearTimeout(pt);if(!G().token)return;cst='wait';stat();pt=setTimeout(async()=>{try{
+ let r=await gh('data/agenda.json');const sha=r.ok?(await r.json()).sha:undefined;
+ r=await gh('data/agenda.json',{method:'PUT',body:JSON.stringify({message:'agenda',sha,content:btoa(unescape(encodeURIComponent(JSON.stringify(S))))})});
+ cst=r.ok?'ok':'err';if(r.ok)cok=Date.now()}catch(e){cst='err'}stat()},4000)}
+async function pull(){try{const r=await gh('data/regibox.json',{headers:{Accept:'application/vnd.github.raw+json'}});if(!r.ok)throw 0;const d=await r.json();const m={};d.classes.forEach(c=>m[c.key]=c);m._at=d.generated_at;RG=m;localStorage.setItem('rg',JSON.stringify(m))}catch(e){}render()}
+try{RG=JSON.parse(localStorage.getItem('rg')||'null')}catch(e){}
+function saveG(){try{localStorage.setItem('gh',JSON.stringify({repo:g('ghr').trim(),token:g('ght').trim()}))}catch(e){}push();pull()}
+function cs(){return cst==='ok'?t('c_ok')+' '+new Date(cok).toLocaleTimeString(loc(),{hour:'2-digit',minute:'2-digit'}):cst==='err'?t('c_err'):cst==='wait'?t('c_wait'):t('c_off')}
+function stat(){const e=document.getElementById('cs');if(e)e.textContent=cs()}
+const ban=()=>'';
+function dl(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='agenda-'+ds(new Date())+'.json';a.click()}
+const rk=o=>o.date+'|'+o.time+'|'+P(o.pl).name.trim()+'|'+TY(o.ty).name.trim();
+const t=k=>T[S.lang][k]||k,uid=()=>Math.random().toString(36).slice(2,9),pad=n=>String(n).padStart(2,'0');
+const ds=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const pd=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+const ad=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const mon=d=>ad(d,-((d.getDay()+6)%7));
+const loc=()=>S.lang==='pt'?'pt-PT':'en-GB';
+const eur=n=>new Intl.NumberFormat(loc(),{style:'currency',currency:'EUR'}).format(n);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fd=(d,o)=>d.toLocaleDateString(loc(),o);
+const P=id=>S.places.find(p=>p.id===id)||{name:'?',color:'#999'},TY=id=>S.types.find(p=>p.id===id)||{name:'?'};
+let view='week',wk=mon(new Date()),mo=new Date(new Date().getFullYear(),new Date().getMonth(),1),em=new Date(mo);
+function occ(date){const d=pd(date),out=[];
+ S.ev.forEach(e=>{const hit=e.rep?(e.wd===d.getDay()&&date>=e.from&&(!e.until||date<=e.until)):e.date===date;if(!hit)return;
+  const o=S.ov[e.id+'@'+date]||{};if(o.del)return;
+  out.push({e,date,key:e.id+'@'+date,pl:o.pl||e.pl,ty:o.ty||e.ty,time:o.time||e.time,status:o.status||'given',wo:o.wo||'',rate:o.rate})});
+ return out.sort((a,b)=>a.time.localeCompare(b.time))}
+const rate=o=>TY(o.ty).nopay?0:(o.rate!=null&&o.rate!=='')?+o.rate:(+S.rates[o.pl+'|'+o.ty]||0);
+const earned=o=>o.status==='given'?rate(o):0;
+function card(o){const p=P(o.pl);return `<div class="cls ${o.status!=='given'?'x':''}" style="--c:${p.color}" onclick="edit('${o.e.id}','${o.date}')"><div class="row sp"><span class="num">${o.time} ${esc(TY(o.ty).name)}</span><span class="eur num">${eur(rate(o))}</span></div><div class="row sp"><span class="mu">${esc(p.name)}${o.e.rep?' ↻':''}</span>${o.status!=='given'?`<span class="chip">${t(o.status==='cancelled'?'cancelled':'subst')}</span>`:''}</div>${(x=>x?`<div class="mu">👥 ${x.enrolled}${x.capacity?'/'+x.capacity:''}</div>`:'')(RG&&RG[rk(o)])}${o.wo?`<div class="wk">${esc(o.wo)}</div>`:''}</div>`}
+function render(){const m=document.getElementById('m');let h='';const td=ds(new Date());
+ if(view==='week'){const e=ad(wk,6);
+  h=`<div class="row sp"><button class="btn" onclick="wk=ad(wk,-7);render()">‹</button><div style="text-align:center"><h2>${fd(wk,{day:'numeric',month:'short'})} – ${fd(e,{day:'numeric',month:'short'})}</h2></div><button class="btn" onclick="wk=ad(wk,7);render()">›</button></div><div class="row" style="margin-top:8px"><button class="btn" onclick="wk=mon(new Date());render()">${t('today')}</button></div>`;
+  for(let i=0;i<7;i++){const d=ad(wk,i),s=ds(d),l=occ(s);
+   h+=`<div class="day ${s===td?'tod':''}"><div class="dh"><span class="num">${fd(d,{weekday:'long',day:'numeric'})}</span><button class="btn" onclick="addC('${s}')">+</button></div>${l.length?l.map(card).join(''):`<div class="mu">${t('none')}</div>`}</div>`}}
+ else if(view==='month'){const y=mo.getFullYear(),mm=mo.getMonth(),f=mon(mo);
+  h=`<div class="row sp"><button class="btn" onclick="mo=new Date(y0(mo),mo.getMonth()-1,1);render()">‹</button><h2>${fd(mo,{month:'long',year:'numeric'})}</h2><button class="btn" onclick="mo=new Date(y0(mo),mo.getMonth()+1,1);render()">›</button></div><div class="grid">`;
+  for(let i=0;i<7;i++)h+=`<div class="mu" style="text-align:center">${fd(ad(f,i),{weekday:'narrow'})}</div>`;
+  for(let i=0;i<42;i++){const d=ad(f,i),s=ds(d);if(i>=35&&d.getMonth()!==mm)break;const l=d.getMonth()===mm?occ(s):[];
+   h+=`<div class="cell ${s===td?'t':''}" style="${d.getMonth()!==mm?'opacity:.35':''}" onclick="wk=mon(pd('${s}'));view='week';render()">${d.getDate()}<div>${l.map(o=>`<span class="dot" style="background:${P(o.pl).color};${o.status!=='given'?'opacity:.35':''}"></span>`).join('')}</div></div>`}
+  h+='</div>'}
+ else if(view==='earn'){const y=em.getFullYear(),mm=em.getMonth(),n=new Date(y,mm+1,0).getDate();let tot=0,cnt=0,bp={},bt={};
+  for(let i=1;i<=n;i++)occ(y+'-'+pad(mm+1)+'-'+pad(i)).forEach(o=>{if(o.status!=='given'||TY(o.ty).nopay)return;const r=rate(o);tot+=r;cnt++;(bp[o.pl]=bp[o.pl]||[0,0]);bp[o.pl][0]++;bp[o.pl][1]+=r;(bt[o.ty]=bt[o.ty]||[0,0]);bt[o.ty][0]++;bt[o.ty][1]+=r});
+  const ln=(a,f)=>Object.keys(a).map(k=>`<div class="row sp" style="margin-top:8px"><span>${esc(f(k))}</span><span><span class="mu">${a[k][0]} ${t('cls')}</span> &nbsp;<b>${eur(a[k][1])}</b></span></div>`).join('');
+  h=`<div class="row sp"><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()-1,1);render()">‹</button><h2>${fd(em,{month:'long',year:'numeric'})}</h2><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()+1,1);render()">›</button></div><div class="card"><div class="mu">${t('total')}</div><div class="num big">${eur(tot)}</div><div class="mu">${cnt} ${t('cls')}</div></div><div class="card"><h2>${t('bp')}</h2>${ln(bp,k=>P(k).name)||'–'}</div><div class="card"><h2>${t('bt')}</h2>${ln(bt,k=>TY(k).name)||'–'}</div>`}
+ else if(view==='places'){h=`<div class="row sp"><h2>${t('places')}</h2><button class="btn pri" onclick="editP()">+ ${t('np')}</button></div>`+S.places.map(p=>`<div class="cls" style="--c:${p.color}" onclick="editP('${p.id}')"><b>${esc(p.name)}</b><div class="mu">${esc(p.addr||'')}</div><div class="mu">${S.types.map(x=>esc(x.name)+': '+eur(+S.rates[p.id+'|'+x.id]||0)).join(' · ')}</div></div>`).join('')}
+ else{h=`<h2>${t('set')}</h2><div class="card"><label>${t('lang')}</label><select onchange="S.lang=this.value;sv();render();nav()"><option value="pt" ${S.lang==='pt'?'selected':''}>Português</option><option value="en" ${S.lang==='en'?'selected':''}>English</option></select></div><div class="card"><h2>${t('types')}</h2>${S.types.map(x=>`<div class="row" style="margin-top:8px"><input value="${esc(x.name)}" onchange="TY('${x.id}').name=this.value;sv()"><label style="margin:0;white-space:nowrap;color:inherit"><input type="checkbox" ${x.nopay?'checked':''} onchange="TY('${x.id}').nopay=this.checked;sv();render()"> ${t('nopay')}</label><button class="btn dng" onclick="delT('${x.id}')">✕</button></div>`).join('')}<div class="row" style="margin-top:10px"><input id="ntn" placeholder="${t('tn')}"><button class="btn pri" onclick="addT()">+</button></div></div><div class="card"><h2>${t('cloud')}</h2><label>Repositório (utilizador/nome)</label><input id="ghr" value="${esc(G().repo||'')}"><label>Token</label><input id="ght" type="password" value="${esc(G().token||'')}"><div class="acts"><button class="btn pri" onclick="saveG()">${t('save')}</button><button class="btn" onclick="pull()">${t('rg')}</button></div><p class="mu" id="cs">${cs()}</p>${RG&&RG._at?`<p class="mu">Regibox: ${esc(RG._at.slice(0,16).replace('T',' '))}</p>`:''}</div><div class="card"><h2>${t('bk')}</h2><div class="acts"><button class="btn" onclick="dl()">${t('file')}</button></div><p class="mu">${t('ex')}</p><textarea readonly onclick="this.select()">${esc(JSON.stringify(S))}</textarea><p class="mu">${t('im')}</p><textarea id="imp"></textarea><div class="acts"><button class="btn" onclick="restore()">${t('rs')}</button></div></div>`}
+ m.innerHTML=ban()+h}
+const y0=d=>d.getFullYear();
+function nav(){document.getElementById('nv').innerHTML=[['week','week'],['month','month'],['earn','earn'],['places','places'],['set','set']].map(([v,k])=>`<button class="${view===v?'on':''}" onclick="view='${v}';render();nav()">${t(k)}</button>`).join('')}
+function sheet(h){document.getElementById('in').innerHTML=h;document.getElementById('sh').style.display='flex'}
+function closeS(){document.getElementById('sh').style.display='none'}
+document.getElementById('sh').addEventListener('click',e=>{if(e.target.id==='sh')closeS()});
+const opts=(a,v)=>a.map(x=>`<option value="${x.id}" ${x.id===v?'selected':''}>${esc(x.name)}</option>`).join('');
+const g=id=>document.getElementById(id).value;
+function addC(date){if(!S.places.length||!S.types.length){sheet(`<p>${t('first')}</p><button class="btn" onclick="closeS()">${t('close')}</button>`);return}
+ form({e:null,date,pl:S.places[0].id,ty:S.types[0].id,time:S.lt,status:'given',wo:'',rate:''})}
+function edit(id,date){const e=S.ev.find(x=>x.id===id),o=occ(date).find(x=>x.e.id===id);if(!o)return;form({e,date,pl:o.pl,ty:o.ty,time:o.time,status:o.status,wo:o.wo,rate:o.rate==null?'':o.rate})}
+function form(o){const e=o.e,r=e&&e.rep,x=RG&&RG[rk(o)];window._x=x;
+ sheet(`<h2>${fd(pd(o.date),{weekday:'long',day:'numeric',month:'long'})}</h2><label>${t('place')}</label><select id="fp">${opts(S.places,o.pl)}</select><label>${t('type')}</label><select id="ft">${opts(S.types,o.ty)}</select><div class="row"><div style="flex:1"><label>${t('time')}</label><input id="fh" type="time" value="${o.time}"></div>${!r?`<div style="flex:1"><label>${t('date')}</label><input id="fd" type="date" value="${o.date}"></div>`:''}</div><label>${t('status')}</label><select id="fs"><option value="given" ${o.status==='given'?'selected':''}>${t('given')}</option><option value="cancelled" ${o.status==='cancelled'?'selected':''}>${t('cancelled')}</option><option value="subst" ${o.status==='subst'?'selected':''}>${t('subst')}</option></select><label>${t('rov')}</label><input id="fr" type="number" step="0.5" inputmode="decimal" value="${o.rate}"><label>${t('wo')}</label><textarea id="fw">${esc(o.wo)}</textarea>${!e?`<label><input type="checkbox" id="frep"> ${t('rep')}</label>`:''}${x?`<div class="card"><b>Regibox</b> · 👥 ${x.enrolled}${x.capacity?'/'+x.capacity:''}${x.students&&x.students.length?`<div class="mu">${x.students.map(esc).join(', ')}</div>`:''}${x.workout?`<div class="wk" style="max-height:none">${esc(x.workout.text)}</div><button class="btn" onclick="document.getElementById('fw').value=window._x.workout.text">Copiar treino</button>`:''}</div>`:''}<div class="acts">${r?`<button class="btn pri" onclick="sv1('${e.id}','${o.date}',0)">${t('st')}</button><button class="btn" onclick="sv1('${e.id}','${o.date}',1)">${t('sa')}</button><button class="btn dng" onclick="rm('${e.id}','${o.date}',0)">${t('dt')}</button><button class="btn dng" onclick="rm('${e.id}','${o.date}',1)">${t('da')}</button>`:`<button class="btn pri" onclick="sv1(${e?`'${e.id}'`:'null'},'${o.date}',2)">${t('save')}</button>${e?`<button class="btn dng" onclick="rm('${e.id}','${o.date}',1)">${t('del')}</button>`:''}`}<button class="btn" onclick="closeS()">${t('close')}</button></div>`)}
+function sv1(id,date,mode){const pl=g('fp'),ty=g('ft'),time=g('fh')||S.lt,st=g('fs'),rt=g('fr'),wo=g('fw');S.lt=time;
+ if(!id){const nd=g('fd')||date,rep=document.getElementById('frep').checked,e={id:uid(),pl,ty,time};
+  if(rep){e.rep=1;e.from=nd;e.wd=pd(nd).getDay()}else e.date=nd;S.ev.push(e);S.ov[e.id+'@'+nd]={status:st,wo,rate:rt}}
+ else{const e=S.ev.find(x=>x.id===id),k=id+'@'+date;
+  if(mode===0)S.ov[k]={pl,ty,time,status:st,wo,rate:rt};
+  else if(mode===1){Object.assign(e,{pl,ty,time});S.ov[k]={status:st,wo,rate:rt}}
+  else{const nd=g('fd')||date;delete S.ov[k];Object.assign(e,{pl,ty,time,date:nd});S.ov[id+'@'+nd]={status:st,wo,rate:rt}}}
+ sv();closeS();render()}
+function rm(id,date,all){conf(()=>rm2(id,date,all))}
+function conf(f){window._cf=f;sheet(`<h2>${t('sure')}</h2><div class="acts"><button class="btn dng" onclick="const f=window._cf;closeS();f()">${t('del')}</button><button class="btn" onclick="closeS()">${t('close')}</button></div>`)}
+function msg(s){sheet(`<p>${s}</p><button class="btn" onclick="closeS()">${t('close')}</button>`)}
+function rm2(id,date,all){const e=S.ev.find(x=>x.id===id);
+ if(all){S.ev=S.ev.filter(x=>x.id!==id);Object.keys(S.ov).forEach(k=>{if(k.startsWith(id+'@'))delete S.ov[k]})}else S.ov[id+'@'+date]={del:1};
+ sv();closeS();render()}
+function editP(id){const p=id?P(id):{name:'',addr:'',contact:'',notes:'',color:COL[S.places.length%COL.length]};
+ sheet(`<h2>${id?esc(p.name):t('np')}</h2><label>${t('name')}</label><input id="pn" value="${esc(p.name)}"><label>${t('addr')}</label><input id="pa" value="${esc(p.addr)}"><label>${t('contact')}</label><input id="pc" value="${esc(p.contact)}"><label>${t('color')}</label><div class="sw">${COL.map(c=>`<span class="${c===p.color?'on':''}" style="background:${c}" onclick="pcol='${c}';this.parentNode.querySelectorAll('span').forEach(s=>s.classList.remove('on'));this.classList.add('on')"></span>`).join('')}</div><label>${t('rates')}</label>${S.types.length?S.types.map(x=>`<div class="row" style="margin-top:6px"><span style="flex:1">${esc(x.name)}</span><input style="width:110px" data-t="${x.id}" type="number" step="0.5" inputmode="decimal" value="${S.rates[id+'|'+x.id]??''}"></div>`).join(''):`<p class="mu">${t('notype')}</p>`}<label>${t('notes')}</label><textarea id="pk" style="min-height:90px">${esc(p.notes)}</textarea><div class="acts"><button class="btn pri" onclick="saveP('${id||''}')">${t('save')}</button>${id?`<button class="btn dng" onclick="delP('${id}')">${t('del')}</button>`:''}<button class="btn" onclick="closeS()">${t('close')}</button></div>`);pcol=p.color}
+let pcol;
+function saveP(id){let p=id?P(id):null;if(!p){p={id:uid()};S.places.push(p)}
+ Object.assign(p,{name:g('pn')||'?',addr:g('pa'),contact:g('pc'),notes:g('pk'),color:pcol});
+ document.querySelectorAll('[data-t]').forEach(i=>{S.rates[p.id+'|'+i.dataset.t]=i.value===''?0:+i.value});sv();closeS();render()}
+function delP(id){conf(()=>delP2(id))}
+function delP2(id){S.places=S.places.filter(p=>p.id!==id);S.ev=S.ev.filter(e=>e.pl!==id);sv();closeS();render()}
+function addT(){const v=g('ntn').trim();if(!v)return;S.types.push({id:uid(),name:v});sv();render()}
+function delT(id){conf(()=>delT2(id))}
+function delT2(id){S.types=S.types.filter(x=>x.id!==id);S.ev=S.ev.filter(e=>e.ty!==id);sv();render()}
+function restore(){try{const d=JSON.parse(g('imp'));if(!d.places||!d.ev)throw 0;S=d;sv();render();nav();msg(t('ok'))}catch(e){msg(t('bad'))}}
+nav();render();pull();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
