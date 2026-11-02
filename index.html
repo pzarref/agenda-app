@@ -33,6 +33,8 @@ input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-
 input[type=checkbox]{width:auto}textarea{min-height:130px}
 .sw{display:flex;gap:8px;margin-top:6px}.sw span{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:pointer}.sw .on{border-color:var(--tx)}
 .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.mny{display:inline-block;cursor:pointer;-webkit-user-select:none;user-select:none;transition:filter .15s}
+body.hm .mny{filter:blur(9px)}body.hm .big.mny,body.hm .big .mny{filter:blur(16px)}
 </style></head><body><main id="m"></main>
 <div class="nav" id="nv"></div><div id="sh"><div class="in" id="in"></div></div>
 <script>
@@ -67,6 +69,10 @@ const ad=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 const mon=d=>ad(d,-((d.getDay()+6)%7));
 const loc=()=>S.lang==='pt'?'pt-PT':'en-GB';
 const eur=n=>new Intl.NumberFormat(loc(),{style:'currency',currency:'EUR'}).format(n);
+const mny=n=>`<span class="mny">${eur(n)}</span>`;
+let HM;try{HM=localStorage.getItem('hm')!=='0'}catch(e){HM=true}
+document.body.classList.toggle('hm',HM);
+document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest('.mny');if(!x)return;e.stopPropagation();e.preventDefault();HM=!HM;document.body.classList.toggle('hm',HM);try{localStorage.setItem('hm',HM?'1':'0')}catch(_){}},true);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fd=(d,o)=>d.toLocaleDateString(loc(),o);
 const P=id=>S.places.find(p=>p.id===id)||{name:'?',color:'#999'},TY=id=>S.types.find(p=>p.id===id)||{name:'?'};
@@ -78,7 +84,7 @@ function occ(date){const d=pd(date),out=[];
  return out.sort((a,b)=>a.time.localeCompare(b.time))}
 const rate=o=>OB(o.ty)?0:(o.rate!=null&&o.rate!=='')?+o.rate:(+S.rates[o.pl+'|'+o.ty]||0);
 const earned=o=>o.status==='given'?rate(o):0;
-function card(o){const p=P(o.pl);return `<div class="cls ${o.status!=='given'?'x':''}" style="--c:${p.color}" onclick="edit('${o.e.id}','${o.date}')"><div class="row sp"><span class="num">${o.time} ${esc(TY(o.ty).name)}</span><span class="eur num">${OB(o.ty)?'Open Box':eur(rate(o))}</span></div><div class="row sp"><span class="mu">${esc(p.name)}${o.e.rep?' ↻':''}</span>${o.status!=='given'?`<span class="chip">${t(o.status==='cancelled'?'cancelled':'subst')}</span>`:''}</div>${(x=>x?`<div class="mu">👥 ${x.enrolled}${x.capacity?'/'+x.capacity:''}</div>`:'')(RG&&RG[rk(o)])}${o.wo?`<div class="wk">${esc(o.wo)}</div>`:''}</div>`}
+function card(o){const p=P(o.pl);return `<div class="cls ${o.status!=='given'?'x':''}" style="--c:${p.color}" onclick="edit('${o.e.id}','${o.date}')"><div class="row sp"><span class="num">${o.time} ${esc(TY(o.ty).name)}</span><span class="eur num">${OB(o.ty)?'Open Box':mny(rate(o))}</span></div><div class="row sp"><span class="mu">${esc(p.name)}${o.e.rep?' ↻':''}</span>${o.status!=='given'?`<span class="chip">${t(o.status==='cancelled'?'cancelled':'subst')}</span>`:''}</div>${(x=>x?`<div class="mu">👥 ${x.enrolled}${x.capacity?'/'+x.capacity:''}</div>`:'')(RG&&RG[rk(o)])}${o.wo?`<div class="wk">${esc(o.wo)}</div>`:''}</div>`}
 function render(){const m=document.getElementById('m');let h='';const td=ds(new Date());
  if(view==='week'){const e=ad(wk,6);
   h=`<div class="row sp"><button class="btn" onclick="wk=ad(wk,-7);render()">‹</button><div style="text-align:center"><h2>${fd(wk,{day:'numeric',month:'short'})} – ${fd(e,{day:'numeric',month:'short'})}</h2></div><button class="btn" onclick="wk=ad(wk,7);render()">›</button></div><div class="row" style="margin-top:8px"><button class="btn" onclick="wk=mon(new Date());render()">${t('today')}</button></div>`;
@@ -92,8 +98,8 @@ function render(){const m=document.getElementById('m');let h='';const td=ds(new 
   h+='</div>'}
  else if(view==='earn'){const y=em.getFullYear(),mm=em.getMonth(),n=new Date(y,mm+1,0).getDate();let tot=0,cnt=0,bp={},bt={};
   for(let i=1;i<=n;i++)occ(y+'-'+pad(mm+1)+'-'+pad(i)).forEach(o=>{if(o.status!=='given'||OB(o.ty))return;const r=rate(o);tot+=r;cnt++;(bp[o.pl]=bp[o.pl]||[0,0]);bp[o.pl][0]++;bp[o.pl][1]+=r;(bt[o.ty]=bt[o.ty]||[0,0]);bt[o.ty][0]++;bt[o.ty][1]+=r});
-  const ln=(a,f)=>Object.keys(a).map(k=>`<div class="row sp" style="margin-top:8px"><span>${esc(f(k))}</span><span><span class="mu">${a[k][0]} ${t('cls')}</span> &nbsp;<b>${eur(a[k][1])}</b></span></div>`).join('');
-  h=`<div class="row sp"><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()-1,1);render()">‹</button><h2>${fd(em,{month:'long',year:'numeric'})}</h2><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()+1,1);render()">›</button></div><div class="card"><div class="mu">${t('total')}</div><div class="num big">${eur(tot)}</div><div class="mu">${cnt} ${t('cls')}</div></div><div class="card"><h2>${t('bp')}</h2>${ln(bp,k=>P(k).name)||'–'}</div><div class="card"><h2>${t('bt')}</h2>${ln(bt,k=>TY(k).name)||'–'}</div>`}
+  const ln=(a,f)=>Object.keys(a).map(k=>`<div class="row sp" style="margin-top:8px"><span>${esc(f(k))}</span><span><span class="mu">${a[k][0]} ${t('cls')}</span> &nbsp;<b>${mny(a[k][1])}</b></span></div>`).join('');
+  h=`<div class="row sp"><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()-1,1);render()">‹</button><h2>${fd(em,{month:'long',year:'numeric'})}</h2><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()+1,1);render()">›</button></div><div class="card"><div class="mu">${t('total')}</div><div class="num big">${mny(tot)}</div><div class="mu">${cnt} ${t('cls')}</div></div><div class="card"><h2>${t('bp')}</h2>${ln(bp,k=>P(k).name)||'–'}</div><div class="card"><h2>${t('bt')}</h2>${ln(bt,k=>TY(k).name)||'–'}</div>`}
  else if(view==='places'){h=`<div class="row sp"><h2>${t('places')}</h2><button class="btn pri" onclick="editP()">+ ${t('np')}</button></div>`+S.places.map(p=>`<div class="cls" style="--c:${p.color}" onclick="editP('${p.id}')"><b>${esc(p.name)}</b><div class="mu">${esc(p.addr||'')}</div><div class="mu">${S.types.map(x=>esc(x.name)+': '+eur(+S.rates[p.id+'|'+x.id]||0)).join(' · ')}</div></div>`).join('')}
  else{h=`<h2>${t('set')}</h2><div class="card"><label>${t('lang')}</label><select onchange="S.lang=this.value;sv();render();nav()"><option value="pt" ${S.lang==='pt'?'selected':''}>Português</option><option value="en" ${S.lang==='en'?'selected':''}>English</option></select></div><div class="card"><h2>${t('types')}</h2>${S.types.map(x=>`<div class="row" style="margin-top:8px"><input value="${esc(x.name)}" onchange="TY('${x.id}').name=this.value;sv()"><button class="btn dng" onclick="delT('${x.id}')">✕</button></div>`).join('')}<div class="row" style="margin-top:10px"><input id="ntn" placeholder="${t('tn')}"><button class="btn pri" onclick="addT()">+</button></div></div><div class="card"><h2>${t('cloud')}</h2><label>Repositório (utilizador/nome)</label><input id="ghr" value="${esc(G().repo||'')}"><label>Token</label><input id="ght" type="password" value="${esc(G().token||'')}"><div class="acts"><button class="btn pri" onclick="saveG()">${t('save')}</button><button class="btn" onclick="pull()">${t('rg')}</button></div><p class="mu" id="cs">${cs()}</p>${RG&&RG._at?`<p class="mu">Regibox: ${esc(RG._at.slice(0,16).replace('T',' '))}</p>`:''}</div><div class="card"><h2>${t('bk')}</h2><div class="acts"><button class="btn" onclick="dl()">${t('file')}</button></div><p class="mu">${t('ex')}</p><textarea readonly onclick="this.select()">${esc(JSON.stringify(S))}</textarea><p class="mu">${t('im')}</p><textarea id="imp"></textarea><div class="acts"><button class="btn" onclick="restore()">${t('rs')}</button></div></div>`}
  m.innerHTML=ban()+h}
