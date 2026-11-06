@@ -59,6 +59,8 @@ Object.assign(T.en,{cloud:'GitHub connection',c_ok:'Saved to GitHub at',c_err:'C
 const COL=['#e4572e','#0b9d8a','#7a5af8','#d99a00','#2e90fa','#d444a6'];
 let S;try{S=JSON.parse(localStorage.getItem('cf')||'null')}catch(e){}
 S=S||{lang:'pt',places:[],types:[],rates:{},ev:[],ov:{},lt:'18:30'};
+S.vac=S.vac||[];
+const inVac=d=>S.vac.some(v=>d>=v.from&&d<=v.to);
 let cst='',cok=0,pt,RG=null;
 const G=()=>{try{return JSON.parse(localStorage.getItem('gh')||'{}')}catch(e){return{}}};
 const sv=()=>{S.at=Date.now();try{localStorage.setItem('cf',JSON.stringify(S))}catch(e){}push()};
@@ -82,14 +84,14 @@ const mon=d=>ad(d,-((d.getDay()+6)%7));
 const loc=()=>S.lang==='pt'?'pt-PT':'en-GB';
 const eur=n=>new Intl.NumberFormat(loc(),{style:'currency',currency:'EUR'}).format(n);
 const mny=n=>`<span class="mny">${eur(n)}</span>`;
-let HM;try{HM=localStorage.getItem('hm')!=='0'}catch(e){HM=true}
+let HM;try{const v=localStorage.getItem('hm');HM=v===null?true:v==='1'}catch(e){HM=true}
 document.body.classList.toggle('hm',HM);
 document.addEventListener('click',e=>{const x=e.target.closest&&e.target.closest('.mny');if(!x)return;e.stopPropagation();e.preventDefault();togM()},true);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fd=(d,o)=>d.toLocaleDateString(loc(),o);
 const P=id=>S.places.find(p=>p.id===id)||{name:'?',color:'#999'},TY=id=>S.types.find(p=>p.id===id)||{name:'?'};
 let view='today',wk=mon(new Date()),mo=new Date(new Date().getFullYear(),new Date().getMonth(),1),em=new Date(mo);
-function occ(date){const d=pd(date),out=[];
+function occ(date){const d=pd(date),out=[];if(inVac(date))return out;
  S.ev.forEach(e=>{const hit=e.rep?(e.wd===d.getDay()&&date>=e.from&&(!e.until||date<=e.until)):e.date===date;if(!hit)return;
   const o=S.ov[e.id+'@'+date]||{};if(o.del)return;
   out.push({e,date,key:e.id+'@'+date,pl:o.pl||e.pl,ty:o.ty||e.ty,time:o.time||e.time,status:o.status||'given',wo:o.wo||'',rate:o.rate})});
@@ -111,8 +113,9 @@ function render(){const m=document.getElementById('m');let h='';const td=ds(new 
   h+='</div>'}
  else if(view==='earn'){const y=em.getFullYear(),mm=em.getMonth(),n=new Date(y,mm+1,0).getDate();let tot=0,cnt=0,bp={},bt={};
   for(let i=1;i<=n;i++)occ(y+'-'+pad(mm+1)+'-'+pad(i)).forEach(o=>{if(o.status!=='given'||OB(o.ty))return;const r=rate(o);tot+=r;cnt++;(bp[o.pl]=bp[o.pl]||[0,0]);bp[o.pl][0]++;bp[o.pl][1]+=r;(bt[o.ty]=bt[o.ty]||[0,0]);bt[o.ty][0]++;bt[o.ty][1]+=r});
-  const ln=(a,f)=>Object.keys(a).map(k=>`<div class="row sp" style="margin-top:8px"><span>${esc(f(k))}</span><span><span class="mu">${a[k][0]} ${t('cls')}</span> &nbsp;<b>${mny(a[k][1])}</b></span></div>`).join('');
-  h=`<div class="row sp"><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()-1,1);render()">‹</button><h2>${fd(em,{month:'long',year:'numeric'})}</h2><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()+1,1);render()">›</button></div><div class="card"><div class="mu">${t('total')}</div><div class="num big">${mny(tot)}</div><div class="mu">${cnt} ${t('cls')}</div></div><div class="card"><h2>${t('bp')}</h2>${ln(bp,k=>P(k).name)||'–'}</div><div class="card"><h2>${t('bt')}</h2>${ln(bt,k=>TY(k).name)||'–'}</div>`+histH()}
+  const rk0=(n,l)=>{n=(n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');const i=l.findIndex(x=>n.includes(x));return i<0?99:i};const sp=k=>rk0(P(k).name,['oxig','liberty','buldogue']),st=k=>rk0(TY(k).name,['cross','hybrid']);
+  const ln=(a,f,o)=>Object.keys(a).sort((x,y)=>o(x)-o(y)).map(k=>`<div class="row sp" style="margin-top:8px"><span>${esc(f(k))}</span><span><span class="mu">${a[k][0]} ${t('cls')}</span> &nbsp;<b>${mny(a[k][1])}</b></span></div>`).join('');
+  h=`<div class="row sp"><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()-1,1);render()">‹</button><h2>${fd(em,{month:'long',year:'numeric'})}</h2><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()+1,1);render()">›</button></div><div class="card"><div class="mu">${t('total')}</div><div class="num big">${mny(tot)}</div><div class="mu">${cnt} ${t('cls')}</div></div><div class="card"><h2>${t('bp')}</h2>${ln(bp,k=>P(k).name,sp)||'–'}</div><div class="card"><h2>${t('bt')}</h2>${ln(bt,k=>TY(k).name,st)||'–'}</div>`+histH()}
  else if(view==='places'){h=`<div class="row sp"><h2>${t('places')}</h2><button class="btn pri" onclick="editP()">+ ${t('np')}</button></div>`+S.places.map(p=>`<div class="cls" style="--c:${p.color}" onclick="editP('${p.id}')"><b>${esc(p.name)}</b><div class="mu">${esc(p.addr||'')}</div><div class="mu">${S.types.map(x=>esc(x.name)+': '+eur(+S.rates[p.id+'|'+x.id]||0)).join(' · ')}</div></div>`).join('')}
  else{h=`<h2>${t('set')}</h2><div class="card"><label>${t('lang')}</label><select onchange="S.lang=this.value;sv();render();nav()"><option value="pt" ${S.lang==='pt'?'selected':''}>Português</option><option value="en" ${S.lang==='en'?'selected':''}>English</option></select></div><div class="card"><h2>${t('types')}</h2>${S.types.map(x=>`<div class="row" style="margin-top:8px"><input value="${esc(x.name)}" onchange="TY('${x.id}').name=this.value;sv()"><button class="btn dng" onclick="delT('${x.id}')">✕</button></div>`).join('')}<div class="row" style="margin-top:10px"><input id="ntn" placeholder="${t('tn')}"><button class="btn pri" onclick="addT()">+</button></div></div><div class="card"><h2>${t('cloud')}</h2><label>Repositório (utilizador/nome)</label><input id="ghr" value="${esc(G().repo||'')}"><label>Token</label><input id="ght" type="password" value="${esc(G().token||'')}"><div class="acts"><button class="btn pri" onclick="saveG()">${t('save')}</button><button class="btn" onclick="pull()">${t('rg')}</button></div><p class="mu" id="cs">${cs()}</p>${RG&&RG._at?`<p class="mu">Regibox: ${esc(RG._at.slice(0,16).replace('T',' '))}</p>`:''}</div>${setExtra()}<div class="card"><h2>${t('bk')}</h2><div class="acts"><button class="btn" onclick="dl()">${t('file')}</button></div><p class="mu">${t('ex')}</p><textarea readonly onclick="this.select()">${esc(JSON.stringify(S))}</textarea><p class="mu">${t('im')}</p><textarea id="imp"></textarea><div class="acts"><button class="btn" onclick="restore()">${t('rs')}</button></div></div>`}
  m.innerHTML=ban()+h}
@@ -238,8 +241,11 @@ function histH(){const lim=ds(ad(new Date(),-56)),G2={};
  const rows=Object.values(G2).sort((a,b)=>a.l.localeCompare(b.l)||((a.wd+6)%7-(b.wd+6)%7)||a.t.localeCompare(b.t));
  const dn=wd=>new Intl.DateTimeFormat(loc(),{weekday:'short'}).format(new Date(2026,0,4+wd)),f1=new Intl.NumberFormat(loc(),{maximumFractionDigits:1});
  return `<div class="card"><h2>Inscritos · últimas 8 semanas</h2>`+(rows.length?rows.map(r=>{const m=r.n.reduce((a,b)=>a+b,0)/r.n.length,z=r.n.filter(x=>x===0).length;return `<div class="hl"><span>${dn(r.wd)} ${r.t} · ${esc(r.l)}</span><span><b>${f1.format(m)}</b> <span class="mu">média · ${r.n.length} aulas${z?' · '+z+' vazia'+(z>1?'s':''):''}</span></span></div>`}).join(''):`<p class="mu">Ainda sem histórico. Vai enchendo com a sincronização diária e com os avisos.</p>`)+`</div>`}
+function vacH(){const f=new Intl.DateTimeFormat('pt-PT',{day:'numeric',month:'short',year:'numeric'}),L=[...S.vac].sort((a,b)=>a.from.localeCompare(b.from));return `<div class="card"><h2>Modo férias</h2><p class="mu">Nas datas escolhidas, as aulas desaparecem da agenda, dos ganhos e dos avisos.</p>`+(L.length?L.map(v=>`<div class="row sp" style="margin-top:8px"><span>${f.format(pd(v.from))}${v.to!==v.from?' – '+f.format(pd(v.to)):''}</span><button class="btn dng" onclick="delVac('${v.id}')">Remover</button></div>`).join(''):'')+`<label>De</label><input type="date" id="vf"><label>Até (inclusive)</label><input type="date" id="vt"><div class="acts"><button class="btn pri" onclick="addVac()">Adicionar férias</button></div></div>`}
+function addVac(){const a=g('vf'),b=g('vt')||a;if(!a)return msg('Escolhe a data de início.');if(b<a)return msg('A data final é anterior ao início.');S.vac.push({id:uid(),from:a,to:b});sv();render()}
+function delVac(id){S.vac=S.vac.filter(v=>v.id!==id);sv();render()}
 function setExtra(){const np=NP(),lk=LK();
- return `<div class="card"><h2>🔔 Avisos de aula vazia</h2><p class="mu">Recebes uma notificação 10 a 15 min antes da aula, só se tiver 0 inscritos.</p>`+(np&&np.on?`<p>Ativos neste telemóvel.</p><div class="acts"><button class="btn" onclick="nTest()">Testar neste telemóvel</button><button class="btn dng" onclick="nOff()">Desativar</button></div>`:`<div class="acts"><button class="btn pri" onclick="nOn()">Ativar avisos</button></div>`)+`<p class="mu" id="nm"></p></div><div class="card"><h2>🔒 Bloqueio</h2>`+(lk?`<p>Ativo (PIN${lk.bio?' + biometria':''}).</p><div class="acts"><button class="btn" onclick="lkForm()">Alterar</button><button class="btn dng" onclick="lkOffForm()">Desativar</button></div>`:`<p class="mu">Pede PIN (ou impressão digital) ao abrir a app.</p><div class="acts"><button class="btn pri" onclick="lkForm()">Ativar bloqueio</button></div>`)+`<p class="mu">Serve para privacidade perante quem pegar no telemóvel desbloqueado; não substitui o bloqueio do telemóvel.</p></div>`}
+ return vacH()+`<div class="card"><h2>🔔 Avisos de aula vazia</h2><p class="mu">Recebes uma notificação 10 a 15 min antes da aula, só se tiver 0 inscritos.</p>`+(np&&np.on?`<p>Ativos neste telemóvel.</p><div class="acts"><button class="btn" onclick="nTest()">Testar neste telemóvel</button><button class="btn dng" onclick="nOff()">Desativar</button></div>`:`<div class="acts"><button class="btn pri" onclick="nOn()">Ativar avisos</button></div>`)+`<p class="mu" id="nm"></p></div><div class="card"><h2>🔒 Bloqueio</h2>`+(lk?`<p>Ativo (PIN${lk.bio?' + biometria':''}).</p><div class="acts"><button class="btn" onclick="lkForm()">Alterar</button><button class="btn dng" onclick="lkOffForm()">Desativar</button></div>`:`<p class="mu">Pede PIN (ou impressão digital) ao abrir a app.</p><div class="acts"><button class="btn pri" onclick="lkForm()">Ativar bloqueio</button></div>`)+`<p class="mu">Serve para privacidade perante quem pegar no telemóvel desbloqueado; não substitui o bloqueio do telemóvel.</p></div>`}
 async function raw(f){const r=await gh(f,{headers:{Accept:'application/vnd.github.raw+json'}});return r.ok?r.json():null}
 async function pull(){try{const d=await raw('data/regibox.json');if(!d)throw 0;const m={};d.classes.forEach(c=>{delete c.students;m[c.key]=c});m._at=d.generated_at;m._err=d.errors||[];m._gaps=d.alert_gaps||[];RG=m;localStorage.setItem('rg',JSON.stringify(m))}catch(e){}
  try{const[a,b]=await Promise.all([raw('data/historico.json'),raw('data/avisos.json')]);if(a||b){const h={};Object.entries((a&&a.h)||{}).forEach(([k,v])=>h[k]=v);Object.entries((b&&b.done)||{}).forEach(([k,v])=>{if(v&&v.n!=null&&!h[k])h[k]={d:v.d,t:v.t,l:v.l,y:v.y,n:v.n,c:v.c}});HS=h;localStorage.setItem('hs',JSON.stringify(h))}}catch(e){}
@@ -253,7 +259,7 @@ const ban=()=>{const c=G();if(!c.token)return'';const w=x=>`<div class="warn">${
  return h};
 /* ---- Ecrã Hoje ---- */
 const hmin=s=>{const[a,b]=s.split(':').map(Number);return a*60+b};
-function togM(){HM=!HM;document.body.classList.toggle('hm',HM);try{localStorage.setItem('hm',HM?'1':'0')}catch(_){}const b=document.getElementById('hmb');if(b)b.textContent=HM?'🙈 Valores ocultos':'👁 Valores visíveis'}
+function togM(){HM=!HM;document.body.classList.toggle('hm',HM);try{localStorage.setItem('hm',HM?'1':'0')}catch(_){}const b=document.getElementById('hmb');if(b)b.textContent=HM?'Valores ocultos':'Valores visíveis'}
 function histAvg(o){const wd=pd(o.date).getDay(),lim=ds(ad(new Date(),-56)),pn=P(o.pl).name.trim();const v=Object.values(HS||{}).filter(x=>x&&x.l===pn&&x.t===o.time&&x.d>=lim&&x.d<o.date&&x.n!=null&&pd(x.d).getDay()===wd).map(x=>x.n);return v.length>=2?v.reduce((a,b)=>a+b,0)/v.length:null}
 function todayH(){
  const now=new Date(),td=ds(now),nm=now.getHours()*60+now.getMinutes(),l=occ(td).slice().sort((a,b)=>a.time.localeCompare(b.time)),end=o=>hmin(o.time)+60;
@@ -269,7 +275,7 @@ function todayH(){
   +(avg!=null?`<div class="mu" style="font-size:12px;margin-top:4px">Média desta aula: ${new Intl.NumberFormat(loc(),{maximumFractionDigits:1}).format(avg)} inscritos</div>`:'')
   +(ob?'':`<details><summary><b>🔥 Aquecimento proposto</b></summary><div id="wuh" class="wu" style="margin-top:6px">${wuH(wt,o.date,1)}</div></details>`)
   +(wshow?`<details open><summary><b>Treino</b>${x&&x.workout?' <span class="mu">do Regibox</span>':''}</summary><div class="wk2">${esc(wshow)}</div></details>`:'')+`</div>`};
- let h=`<div class="row sp"><div><h2>${t('today')}</h2><div class="mu">${fd(now,{weekday:'long',day:'numeric',month:'long'})} · ${n} ${t('cls')}</div></div><button class="btn" id="hmb" onclick="togM()">${HM?'🙈 Valores ocultos':'👁 Valores visíveis'}</button></div>`;
+ let h=`<div class="row sp"><div><h2>${t('today')}</h2><div class="mu">${fd(now,{weekday:'long',day:'numeric',month:'long'})} · ${n} ${t('cls')}</div></div><button class="btn" id="hmb" onclick="togM()">${HM?'Valores ocultos':'Valores visíveis'}</button></div>`;
  if(!l.length){let nx='';for(let i=1;i<=14&&!nx;i++){const d=ad(now,i),o=occ(ds(d)).find(z=>z.status==='given');if(o)nx=`<p class="mu">Próxima aula: ${fd(d,{weekday:'long',day:'numeric',month:'short'})} · ${o.time} ${esc(P(o.pl).name)}</p>`}
   return h+`<div class="card" style="margin-top:10px"><p>Sem aulas hoje.</p>${nx}<div class="acts"><button class="btn" onclick="addC('${td}')">+ ${t('add')}</button></div></div>`}
  return h+'<div style="margin-top:8px">'+l.map(o=>o===nxt?feat(o):row(o)).join('')+'</div>'}
@@ -301,6 +307,6 @@ function delP2(id){S.places=S.places.filter(p=>p.id!==id);S.ev=S.ev.filter(e=>e.
 function addT(){const v=g('ntn').trim();if(!v)return;S.types.push({id:uid(),name:v});sv();render()}
 function delT(id){conf(()=>delT2(id))}
 function delT2(id){S.types=S.types.filter(x=>x.id!==id);S.ev=S.ev.filter(e=>e.ty!==id);sv();render()}
-function restore(){try{const d=JSON.parse(g('imp'));if(!d.places||!d.ev)throw 0;S=d;sv();render();nav();msg(t('ok'))}catch(e){msg(t('bad'))}}
+function restore(){try{const d=JSON.parse(g('imp'));if(!d.places||!d.ev)throw 0;S=d;S.vac=S.vac||[];sv();render();nav();msg(t('ok'))}catch(e){msg(t('bad'))}}
 if(LK())lkShow();nav();render();pull();nCheck();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script></body></html>
