@@ -65,10 +65,33 @@ let cst='',cok=0,pt,RG=null;
 const G=()=>{try{return JSON.parse(localStorage.getItem('gh')||'{}')}catch(e){return{}}};
 const sv=()=>{S.at=Date.now();try{localStorage.setItem('cf',JSON.stringify(S))}catch(e){}push()};
 const gh=(path,opt={})=>{const c=G();return fetch('https://api.github.com/repos/'+c.repo+'/contents/'+path,{...opt,headers:{Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json',...(opt.headers||{})}})};
-function push(){clearTimeout(pt);if(!G().token)return;cst='wait';stat();pt=setTimeout(async()=>{try{
+let busy=0;
+async function doPush(){clearTimeout(pt);pt=null;if(!G().token)return;if(busy){pt=setTimeout(doPush,3000);return}busy=1;try{
  let r=await gh('data/agenda.json');const sha=r.ok?(await r.json()).sha:undefined;
  r=await gh('data/agenda.json',{method:'PUT',body:JSON.stringify({message:'agenda',sha,content:btoa(unescape(encodeURIComponent(JSON.stringify(S))))})});
- cst=r.ok?'ok':'err';if(r.ok)cok=Date.now()}catch(e){cst='err'}stat()},4000)}
+ cst=r.ok?'ok':'err';if(r.ok){cok=Date.now();try{localStorage.removeItem('pd')}catch(e){}}}catch(e){cst='err'}busy=0;stat()}
+function push(){clearTimeout(pt);if(!G().token)return;try{localStorage.setItem('pd','1')}catch(e){}cst='wait';stat();pt=setTimeout(doPush,30000)}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&pt)doPush()});
+const gha=(path,opt={})=>fetch('https://api.github.com/repos/'+G().repo+'/'+path,{...opt,headers:{Authorization:'Bearer '+G().token,Accept:'application/vnd.github+json',...(opt.headers||{})}});
+let SY=0;
+async function syncNow(){
+ if(!G().token){msg('Falta o token do GitHub (Definições).');return}
+ if(SY)return;SY=1;
+ const set=x=>{const e=document.getElementById('rgb');if(e){e.textContent=x;e.disabled=SY?true:false}};
+ try{
+  set('A guardar agenda…');if(pt)await doPush();
+  set('A iniciar…');const t0=Date.now()-15000;
+  let r=await gha('actions/workflows/sync.yml/dispatches',{method:'POST',body:JSON.stringify({ref:'main'})});
+  if(!r.ok){msg(r.status===403||r.status===404?'O token não tem permissão para Actions. Cria um token com "Actions: Read and write".':'Não foi possível iniciar a sincronização.');return}
+  set('A sincronizar…');let ok=null;
+  for(let i=0;i<72;i++){await new Promise(z=>setTimeout(z,5000));
+   r=await gha('actions/workflows/sync.yml/runs?per_page=6&branch=main');if(!r.ok)continue;
+   const rs=(await r.json()).workflow_runs.filter(x=>Date.parse(x.created_at)>=t0);
+   if(rs.length&&rs.every(x=>x.status==='completed')){ok=rs[0].conclusion==='success';break}}
+  set('A ler dados…');await pull();
+  msg(ok===null?'Demorou demasiado. Vê o estado no GitHub.':ok?'Regibox atualizado.':'A sincronização terminou com erros. Vê o registo no GitHub.')
+ }catch(e){msg('Erro de ligação.')}finally{SY=0;set(t('rg'))}
+}
 try{RG=JSON.parse(localStorage.getItem('rg')||'null');if(RG)Object.values(RG).forEach(c=>{if(c&&c.students)delete c.students});if(RG)localStorage.setItem('rg',JSON.stringify(RG))}catch(e){}
 function saveG(){try{localStorage.setItem('gh',JSON.stringify({repo:g('ghr').trim(),token:g('ght').trim()}))}catch(e){}push();pull()}
 function cs(){return cst==='ok'?t('c_ok')+' '+new Date(cok).toLocaleTimeString(loc(),{hour:'2-digit',minute:'2-digit'}):cst==='err'?t('c_err'):cst==='wait'?t('c_wait'):t('c_off')}
@@ -117,7 +140,7 @@ function render(){const m=document.getElementById('m');let h='';const td=ds(new 
   const ln=(a,f,o)=>Object.keys(a).sort((x,y)=>o(x)-o(y)).map(k=>`<div class="row sp" style="margin-top:8px"><span>${esc(f(k))}</span><span><span class="mu">${a[k][0]} ${t('cls')}</span> &nbsp;<b>${mny(a[k][1])}</b></span></div>`).join('');
   h=`<div class="row sp"><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()-1,1);render()">‹</button><h2>${fd(em,{month:'long',year:'numeric'})}</h2><button class="btn" onclick="em=new Date(em.getFullYear(),em.getMonth()+1,1);render()">›</button></div><div class="card"><div class="mu">${t('total')}</div><div class="num big">${mny(tot)}</div><div class="mu">${cnt} ${t('cls')}</div></div><div class="card"><h2>${t('bp')}</h2>${ln(bp,k=>P(k).name,sp)||'–'}</div><div class="card"><h2>${t('bt')}</h2>${ln(bt,k=>TY(k).name,st)||'–'}</div>`+histH()}
  else if(view==='places'){h=`<div class="row sp"><h2>${t('places')}</h2><button class="btn pri" onclick="editP()">+ ${t('np')}</button></div>`+S.places.map(p=>`<div class="cls" style="--c:${p.color}" onclick="editP('${p.id}')"><b>${esc(p.name)}</b><div class="mu">${esc(p.addr||'')}</div><div class="mu">${S.types.map(x=>esc(x.name)+': '+eur(+S.rates[p.id+'|'+x.id]||0)).join(' · ')}</div></div>`).join('')}
- else{h=`<h2>${t('set')}</h2><div class="card"><label>${t('lang')}</label><select onchange="S.lang=this.value;sv();render();nav()"><option value="pt" ${S.lang==='pt'?'selected':''}>Português</option><option value="en" ${S.lang==='en'?'selected':''}>English</option></select></div><div class="card"><h2>${t('types')}</h2>${S.types.map(x=>`<div class="row" style="margin-top:8px"><input value="${esc(x.name)}" onchange="TY('${x.id}').name=this.value;sv()"><button class="btn dng" onclick="delT('${x.id}')">✕</button></div>`).join('')}<div class="row" style="margin-top:10px"><input id="ntn" placeholder="${t('tn')}"><button class="btn pri" onclick="addT()">+</button></div></div><div class="card"><h2>${t('cloud')}</h2><label>Repositório (utilizador/nome)</label><input id="ghr" value="${esc(G().repo||'')}"><label>Token</label><input id="ght" type="password" value="${esc(G().token||'')}"><div class="acts"><button class="btn pri" onclick="saveG()">${t('save')}</button><button class="btn" onclick="pull()">${t('rg')}</button></div><p class="mu" id="cs">${cs()}</p>${RG&&RG._at?`<p class="mu">Regibox: ${esc(RG._at.slice(0,16).replace('T',' '))}</p>`:''}</div>${setExtra()}<div class="card"><h2>${t('bk')}</h2><div class="acts"><button class="btn" onclick="dl()">${t('file')}</button></div><p class="mu">${t('ex')}</p><textarea readonly onclick="this.select()">${esc(JSON.stringify(S))}</textarea><p class="mu">${t('im')}</p><textarea id="imp"></textarea><div class="acts"><button class="btn" onclick="restore()">${t('rs')}</button></div></div>`}
+ else{h=`<h2>${t('set')}</h2><div class="card"><label>${t('lang')}</label><select onchange="S.lang=this.value;sv();render();nav()"><option value="pt" ${S.lang==='pt'?'selected':''}>Português</option><option value="en" ${S.lang==='en'?'selected':''}>English</option></select></div><div class="card"><h2>${t('types')}</h2>${S.types.map(x=>`<div class="row" style="margin-top:8px"><input value="${esc(x.name)}" onchange="TY('${x.id}').name=this.value;sv()"><button class="btn dng" onclick="delT('${x.id}')">✕</button></div>`).join('')}<div class="row" style="margin-top:10px"><input id="ntn" placeholder="${t('tn')}"><button class="btn pri" onclick="addT()">+</button></div></div><div class="card"><h2>${t('cloud')}</h2><label>Repositório (utilizador/nome)</label><input id="ghr" value="${esc(G().repo||'')}"><label>Token</label><input id="ght" type="password" value="${esc(G().token||'')}"><div class="acts"><button class="btn pri" onclick="saveG()">${t('save')}</button><button class="btn" id="rgb" onclick="syncNow()">${t('rg')}</button></div><p class="mu" id="cs">${cs()}</p>${RG&&RG._at?`<p class="mu">Regibox: ${esc(RG._at.slice(0,16).replace('T',' '))}</p>`:''}</div>${setExtra()}<div class="card"><h2>${t('bk')}</h2><div class="acts"><button class="btn" onclick="dl()">${t('file')}</button></div><p class="mu">${t('ex')}</p><textarea readonly onclick="this.select()">${esc(JSON.stringify(S))}</textarea><p class="mu">${t('im')}</p><textarea id="imp"></textarea><div class="acts"><button class="btn" onclick="restore()">${t('rs')}</button></div></div>`}
  m.innerHTML=ban()+h}
 const y0=d=>d.getFullYear();
 function nav(){document.getElementById('nv').innerHTML=[['today','today'],['week','week'],['month','month'],['earn','earn'],['places','places'],['set','set']].map(([v,k])=>`<button class="${view===v?'on':''}" onclick="view='${v}';render();nav()">${t(k)}</button>`).join('')}
@@ -308,5 +331,5 @@ function addT(){const v=g('ntn').trim();if(!v)return;S.types.push({id:uid(),name
 function delT(id){conf(()=>delT2(id))}
 function delT2(id){S.types=S.types.filter(x=>x.id!==id);S.ev=S.ev.filter(e=>e.ty!==id);sv();render()}
 function restore(){try{const d=JSON.parse(g('imp'));if(!d.places||!d.ev)throw 0;S=d;S.vac=S.vac||[];sv();render();nav();msg(t('ok'))}catch(e){msg(t('bad'))}}
-if(LK())lkShow();nav();render();pull();nCheck();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(LK())lkShow();nav();render();pull();nCheck();try{if(localStorage.getItem('pd')&&G().token)push()}catch(e){}if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script></body></html>
